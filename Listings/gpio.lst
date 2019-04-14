@@ -1,0 +1,218 @@
+C51 COMPILER V9.00   GPIO                                                                  12/28/2018 20:10:36 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE GPIO
+OBJECT MODULE PLACED IN .\Objects\gpio.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\gpio.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) DEBUG
+                    - OBJECTEXTEND PRINT(.\Listings\gpio.lst) TABS(2) OBJECT(.\Objects\gpio.obj)
+
+line level    source
+
+   1          /****************************gpio.c********************************/
+   2          
+   3          #include "gpio.h"
+   4          #include "STC15F2K60S2.h"
+   5          #include "main.h"
+   6          //通用IO引脚初始化
+   7          
+   8          void GPIOInit(GPIOTypeDef_t GPIOPort, unsigned char GPIOPin, unsigned char GPIOMode)
+   9          {
+  10   1        //根据输入端口，引脚和模式配置对应寄存器
+  11   1        switch(GPIOPort)
+  12   1        {
+  13   2          case GPIOPort0:
+  14   2            if(GPIOMode&0x02)
+  15   2            {
+  16   3              P0M1|=GPIOPin;
+  17   3            }
+  18   2            else
+  19   2            {
+  20   3              P0M1&=(~GPIOPin);
+  21   3            }
+  22   2            if(GPIOMode&0x01)
+  23   2            {
+  24   3              P0M0|=GPIOPin;
+  25   3            }
+  26   2            else
+  27   2            {
+  28   3              P0M0&=(~GPIOPin);
+  29   3            }
+  30   2          break;
+  31   2          case GPIOPort1:
+  32   2            if(GPIOMode&0x02)
+  33   2            {
+  34   3              P1M1|=GPIOPin;
+  35   3            }
+  36   2            else
+  37   2            {
+  38   3              P1M1&=(~GPIOPin);
+  39   3            }
+  40   2            if(GPIOMode&0x01)
+  41   2            {
+  42   3              P1M0|=GPIOPin;
+  43   3            }
+  44   2            else
+  45   2            {
+  46   3              P1M0&=(~GPIOPin);
+  47   3            }
+  48   2          break;
+  49   2          case GPIOPort2:
+  50   2            if(GPIOMode&0x02)
+  51   2            {
+  52   3              P2M1|=GPIOPin;
+  53   3            }
+  54   2            else
+C51 COMPILER V9.00   GPIO                                                                  12/28/2018 20:10:36 PAGE 2   
+
+  55   2            {
+  56   3              P2M1&=(~GPIOPin);
+  57   3            }
+  58   2            if(GPIOMode&0x01)
+  59   2            {
+  60   3              P2M0|=GPIOPin;
+  61   3            }
+  62   2            else
+  63   2            {
+  64   3              P2M0&=(~GPIOPin);
+  65   3            }
+  66   2          break;
+  67   2          case GPIOPort3:
+  68   2            if(GPIOMode&0x02)
+  69   2            {
+  70   3              P3M1|=GPIOPin;
+  71   3            }
+  72   2            else
+  73   2            {
+  74   3              P3M1&=(~GPIOPin);
+  75   3            }
+  76   2            if(GPIOMode&0x01)
+  77   2            {
+  78   3              P3M0|=GPIOPin;
+  79   3            }
+  80   2            else
+  81   2            {
+  82   3              P3M0&=(~GPIOPin);
+  83   3            }
+  84   2          break;
+  85   2          default:
+  86   2          break;
+  87   2        }
+  88   1      
+  89   1      }
+  90          
+  91          //引脚置位函数
+  92          void GPIOSetBit(GPIOTypeDef_t GPIOPort, unsigned char GPIOPin)
+  93          {
+  94   1        switch(GPIOPort)
+  95   1        {
+  96   2          case GPIOPort0:
+  97   2            P0|=GPIOPin;
+  98   2          break;
+  99   2          case GPIOPort1:
+ 100   2            P1|=GPIOPin;
+ 101   2          break;
+ 102   2          case GPIOPort2:
+ 103   2            P2|=GPIOPin;
+ 104   2          break;
+ 105   2          case GPIOPort3:
+ 106   2            P3|=GPIOPin;
+ 107   2          break;
+ 108   2          default:
+ 109   2          break;
+ 110   2        }
+ 111   1      
+ 112   1      }
+ 113          
+ 114          //引脚复位函数
+ 115          void GPIOResetBit(GPIOTypeDef_t GPIOPort, unsigned char GPIOPin)
+ 116          {
+C51 COMPILER V9.00   GPIO                                                                  12/28/2018 20:10:36 PAGE 3   
+
+ 117   1        switch(GPIOPort)
+ 118   1        {
+ 119   2          case GPIOPort0:
+ 120   2            P0&=(~GPIOPin);
+ 121   2          break;
+ 122   2          case GPIOPort1:
+ 123   2            P1&=(~GPIOPin);
+ 124   2          break;
+ 125   2          case GPIOPort2:
+ 126   2            P2&=(~GPIOPin);
+ 127   2          break;
+ 128   2          case GPIOPort3:
+ 129   2            P3&=(~GPIOPin);
+ 130   2          break;
+ 131   2          default:
+ 132   2          break;
+ 133   2        }
+ 134   1      }
+ 135          
+ 136          //读取引脚输入函数
+ 137          unsigned char GPIOReadBit(unsigned char GPIOPort, unsigned char GPIOPin)
+ 138          {
+ 139   1        switch(GPIOPort)
+ 140   1        {
+ 141   2          case GPIOPort0:
+ 142   2            P0|=GPIOPin;
+ 143   2            return ((P0&GPIOPin)!=0x00);
+ 144   2          break;
+ 145   2          case GPIOPort1:
+ 146   2            P1|=GPIOPin;
+ 147   2            return ((P1&GPIOPin)!=0x00);
+ 148   2          break;
+ 149   2          case GPIOPort2:
+ 150   2            P2|=GPIOPin;
+ 151   2            return ((P2&GPIOPin)!=0x00);
+ 152   2          break;
+ 153   2          case GPIOPort3:
+ 154   2            P3|=GPIOPin;
+ 155   2            return ((P3&GPIOPin)!=0x00);
+ 156   2          break;
+ 157   2          default:
+ 158   2            return RETURN_ERROR;
+ 159   2          break;
+ 160   2        }
+ 161   1      }
+ 162          
+ 163          // 读取整个引脚
+ 164          unsigned char GPIOReadByte(unsigned char GPIOPort)
+ 165          {
+ 166   1        switch(GPIOPort)
+ 167   1        {
+ 168   2          case GPIOPort0:
+ 169   2            P0|=0xFF;
+ 170   2            return (P0&0xFF);
+ 171   2          break;
+ 172   2          case GPIOPort1:
+ 173   2            P1|=0xFF;
+ 174   2            return (P1&0xFF);
+ 175   2          break;
+ 176   2          case GPIOPort2:
+ 177   2            P2|=0xFF;
+ 178   2            return (P2&0xFF);
+C51 COMPILER V9.00   GPIO                                                                  12/28/2018 20:10:36 PAGE 4   
+
+ 179   2          break;
+ 180   2          case GPIOPort3:
+ 181   2            P3|=0xFF;
+ 182   2            return (P3&0xFF);
+ 183   2          break;
+ 184   2          default:
+ 185   2            return RETURN_ERROR;
+ 186   2          break;
+ 187   2        }
+ 188   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    300    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

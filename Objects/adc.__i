@@ -1,0 +1,1 @@
+"src\adc.c" LARGE OPTIMIZE (8,SPEED) BROWSE INCDIR(.\src) DEBUG OBJECTEXTEND PRINT(.\Listings\adc.lst) TABS (2) OBJECT(.\Objects\adc.obj)

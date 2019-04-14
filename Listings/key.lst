@@ -1,0 +1,77 @@
+C51 COMPILER V9.00   KEY                                                                   12/28/2018 20:10:38 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN .\Objects\key.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\key.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Listings\key.lst) TABS(2) OBJECT(.\Objects\key.obj)
+
+line level    source
+
+   1          #include "key.h"
+   2          #include "HD7279.h"
+   3          #include "stdDtype.h"
+   4          
+   5          uint8_t xdata keyCode[16] = {27, 19, 11, 3, 26, 18, 10, 2, 25, 17, 9, 1, 24, 16, 8, 0};
+   6          
+   7          uint8_t ReadKeyNum(void)
+   8          {
+   9   1        uint8_t keyValue = 0;
+  10   1        uint8_t keyNum = 0;
+  11   1        keyValue = KeyRead();
+  12   1        if(keyValue == 0XFF)
+  13   1        {
+  14   2          return 0xff;
+  15   2        }
+  16   1        for(keyNum = 0;keyNum < 16;keyNum++)
+  17   1        {
+  18   2          if(keyCode[keyNum] == keyValue)
+  19   2          {
+  20   3            break;
+  21   3          }
+  22   2        }
+  23   1        return keyNum;
+  24   1      }
+  25          
+  26          
+  27          
+  28          uint8_t KeyScan(void)
+  29          {
+  30   1        static uint8_t flag = 1;
+  31   1        uint8_t keyValue = 0;
+  32   1        uint8_t keyNum = 0;
+  33   1        keyValue = KeyRead();
+  34   1        
+  35   1        if(keyValue != 0xff && flag)
+  36   1        {
+  37   2          flag = 0;
+  38   2          for(keyNum = 0;keyNum < 16;keyNum++)
+  39   2          {
+  40   3            if(keyCode[keyNum] == keyValue)
+  41   3            {
+  42   4              break;
+  43   4            }
+  44   3          }
+  45   2          return keyNum;
+  46   2        }else if(keyValue == 0xff)
+  47   1        {
+  48   2          flag = 1;
+  49   2        }
+  50   1        return 0xff;
+  51   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.00   KEY                                                                   12/28/2018 20:10:38 PAGE 2   
+
+   CODE SIZE        =    135    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     17       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

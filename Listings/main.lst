@@ -1,0 +1,507 @@
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\main.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) DEBUG
+                    - OBJECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "main.h"
+   2          #include "timer.h"
+   3          
+   4          microwBox_t microwBox = {0};
+   5          
+   6          #if MICROW_EXAM == 1
+              //P1IO实验状态指示枚举变量
+              typedef enum
+              {
+                //四个LED灯
+                blinkIn4,
+                //流水灯 
+                flow,
+                //LED灯指示开关状态
+                showInput,
+                // led通过二进制显示led
+                key2LedBinary,
+                //空闲状态
+                p1Idle
+              }p1IOStatus_t;
+              
+              void main(void)
+              {
+                  //状态指示变量
+                p1IOStatus_t idata p1IOStatus = showInput;
+                while(1)
+                {
+                  //每20ms循环一次
+                  //DelayMs(20);
+                  switch(p1IOStatus)
+                  {
+                    //四个LED一组闪烁
+                    case blinkIn4:
+                      BlinkIn4(500);
+                    break;
+                    //流水灯
+                    case flow:
+                      Flow(500);
+                    break;
+                    //将P10~P13输入输出到P14~P17，用输入控制LED的亮灭
+                    case showInput:
+                      ShowInput();
+                    break;
+                    case key2LedBinary:
+                      Key2LedBinary();
+                    break;
+                    case p1Idle:
+                    break;
+                    default:
+                    break;
+                  } 
+                }
+              }
+              #elif MICROW_EXAM == 2
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 2   
+
+              void main(void)
+              {
+                uint8_t motorCtrlCmd = 0x00;
+                // 控制电机引脚初始化
+                StepMotorPinInit();
+                // 等待初始化完成
+                //DelayMs(500);
+                Delay500ms();
+                while(1)
+                {
+                  // 获得电机控制命令
+                  motorCtrlCmd = getStepMotorCtrlCmd();
+                  // 启动电机
+                    
+                  if(motorCtrlCmd & 0x04)
+                  {
+              //      motorCtrlCmd的4位控制转向，5、6位控制速度      
+              //      direction = -1 + 2*((motorCtrlCmd&0x08)>>3)
+              //      velSpeed = ((motorCtrlCmd&0x30)>>4) + 1;
+              //      vel = direction * velSpeed
+                    StepMotorSpeedControl((-1 + 2*((motorCtrlCmd&0x08)>>3)) * (((motorCtrlCmd&0x30)>>4) + 1))
+                  }else{
+                    //StepMotorSpeedControl(0);
+                  }
+                }
+              }
+              
+              #elif MICROW_EXAM == 3
+              typedef enum
+              {
+                //实验1
+                EXP1,
+                //实验2
+                EXP2
+              }timerExpStatus_t;
+              void main(void)
+              {
+                timerExpStatus_t idata timerExpStatus = EXP2;
+                
+                //定时器初始化结构体 
+                timeMode_t timeMode ={0};
+                
+                //对结构体进行赋值
+                timeMode.isGateCrl = noGateCrl;
+                timeMode.timeWorkMode = timer;
+                //timeMode.timeTriggerMode = innerTrigger;
+                timeMode.timerMode = byteAutoReload;
+                
+                //初始化定时器5ms
+                TimeInit(TIM0 , timeMode ,200, TIMERUS);
+                
+                //使能定时器中断
+                TimerOverFlowItInit(TIM0 , enable);
+              
+                //使能外部中断0
+                ExternalITInit(exIT0,EXIT_DOWN_TRIGGER);
+                
+                //定时器1=88，0=82
+              //  IE = 0x88;
+              //  TMOD = 0x20;
+              //  TH1 = 0x37;
+              //  TL1 = 0x37;
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 3   
+
+                // 启动定时器0
+                //TR1 = 1;
+                while(1)
+                {
+                  if(microwBox.pro_runFlag)
+                  {
+                    microwBox.pro_runFlag = 0;
+                    //每20ms循环一次
+                    //根据不同中断中的标志切换LED的状态
+                    switch(timerExpStatus)
+                    {
+                      case EXP1:
+                          FlowLedOnly(100);
+                          //Flow(100);
+                      break;
+                      case EXP2:
+                        if(microwBox.example3.LedItStatus)
+                        {
+                          Flow(100);
+                        }
+                        else
+                        {
+                          //FlowContrary(100);
+                          BlinkIn4(100);
+                        }
+                      break;
+                      default:
+                      break;
+                    }   
+                  }
+                }
+              }
+              
+              #elif MICROW_EXAM == 4
+              void main(void)
+              {
+                //  //对P1IO的输出引脚
+                
+                UARTMode_t UARTInitStruct = {0};
+                
+                P1 = 0x00;
+                
+                // 波特率发生器初始化
+                UARTInitStruct.UARTMode = UART_MODE_1;
+                UARTInitStruct.UARTIsMulti = 0;
+                UARTInitStruct.isUARTBaudrateDouble = UART_BAUDRATE_DOUBLE;
+                UARTInitStruct.itPriority = 0;
+                UARTInit(UART1,UARTInitStruct,9600);
+                
+                while(1)
+                {
+                  DelayMs(20);
+                  
+                  UARTSendByte(UART1,0xA5);
+                  
+                  //microwBox.uart.UART1Recieve = 0;
+                  
+                  //LEDShowInt(microwBox.uart.UART1Recieve);
+                  LEDShowInt(-1);
+                  //LedWrite(0x97, 0x30);
+                  if(microwBox.uart.enterIntCnt > 4)
+                  {
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 4   
+
+                    microwBox.uart.UART1Recieve = 0;
+                  }else
+                  {
+                    microwBox.uart.enterIntCnt++;
+                  }
+                  //LEDShowInt(12);
+                }
+              }
+              
+              #elif MICROW_EXAM == 51
+              void main(void)
+              {
+                IO8255Init_t IO8255InitStuct = {0};
+                unsigned char pinNum = 0;
+                
+                IO8255InitStuct.portAInit.IO8255Mode = IO8255_MODE0;
+                IO8255InitStuct.portAInit.IOInOrOut = IO8255_INPUT;
+              
+                IO8255InitStuct.portBInit.IO8255Mode = IO8255_MODE0;
+                IO8255InitStuct.portBInit.IOInOrOut = IO8255_OUTPUT;
+                
+                IO8255InitStuct.portCUInit.IOInOrOut = IO8255_OUTPUT;
+                IO8255InitStuct.portCLInit.IOInOrOut = IO8255_OUTPUT;
+                
+              
+                IO8255Init(IO8255InitStuct);
+                
+                while(1)
+                {
+                  for(pinNum=0 ; pinNum < 8 ; pinNum++)
+                  {
+                    IO8255SetBit(PortB , pinNum , IO8255ReadBit(PortA , pinNum));
+                  }
+              
+                }
+                //test8255();
+              }
+              #elif MICROW_EXAM == 52
+              
+              #define STB(state) IO8255SetBit(PortC,4,state)
+              #define BUSY (IO8255ReadBit(PortC,0))
+              
+              void main(void)
+              {
+                uint8_t sendData = 0;
+                
+                IO8255Init_t IO8255InitStuct = {0};
+                
+                IO8255InitStuct.portAInit.IO8255Mode = IO8255_MODE0;
+                IO8255InitStuct.portAInit.IOInOrOut = IO8255_OUTPUT;
+              
+                IO8255InitStuct.portBInit.IO8255Mode = IO8255_MODE0;
+                IO8255InitStuct.portBInit.IOInOrOut = IO8255_INPUT;
+                
+                IO8255InitStuct.portCUInit.IO8255Mode = IO8255_MODE0;
+                IO8255InitStuct.portCUInit.IOInOrOut = IO8255_OUTPUT;
+                
+                IO8255InitStuct.portCLInit.IO8255Mode = IO8255_MODE0;
+                IO8255InitStuct.portCLInit.IOInOrOut = IO8255_INPUT;
+                
+                IO8255Init(IO8255InitStuct);
+                
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 5   
+
+                while(1)
+                {
+                  STB(1);
+                  if(BUSY == 0)
+                  {
+                    DelayMs(250);
+                    if(BUSY == 0)
+                    {
+                      sendData ++;
+                      SendData_8225(sendData);
+                      STB(0);
+                      DelayMs(20);
+                    }
+                    if(sendData > 20)
+                    {
+                      sendData = 0;
+                    }
+                  }else
+                  {
+                    DelayMs(20);
+                  }
+                }
+              }
+              #elif MICROW_EXAM == 61
+              typedef enum
+              {
+                //实验1
+                EXP1,
+                //实验2
+                EXP2,
+                EXP3
+              }timerExpStatus_t;
+              void main(void)
+              {
+              
+                timerExpStatus_t idata timerExpStatus = EXP3;
+                uint8_t keyValue = 0;
+                unsigned short pulseValue = 0;
+                
+                DelayMs(1000);
+                CLK_DIV = (CLK_DIV&0x3f)|0x40;
+                
+                EA = 1;
+                
+                if(timerExpStatus != EXP3)
+                {
+                  Timer8254CounterModeInit(timer8254Timer0, 5);
+                }else
+                {
+                  // 初始为200khz
+                  Timer8254SquareWaveModeInit(timer8254Timer0, 10);
+                  Timer8254SquareWaveModeInit(timer8254Timer1, 2000);
+                  Timer8254SquareWaveModeInit(timer8254Timer2, 2000);
+                  LEDShowInt(200);
+                }
+              
+                
+                //StepMotorPinInit();
+                //使能外部中断0
+                ExternalITInit(exIT0,EXIT_DOWN_TRIGGER);
+                ExternalITCmd(exIT0, enable);
+              
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 6   
+
+              //  ExternalITInit(exIT1 , EXIT_DOWN_TRIGGER);
+              //  ExternalITCmd(exIT1, enable);
+                
+                while(1)
+                {
+                  DelayMs(20);
+                  switch(timerExpStatus)
+                  {
+                    case EXP1:
+                        LEDShowInt(Timer8254GetCounter(timer8254Timer0));
+                        if(microwBox.example3.LedItStatus)
+                        {
+                          BlinkIn4_P374(100);
+                        }
+                        else
+                        {
+                          Flow_P374(100);
+                          //FlowContrary(100);
+                        }
+                    break;
+                    case EXP2:
+                      
+                    break;
+                    case EXP3:
+                      keyValue = ReadKeyNum();
+                      if(keyValue == 0xff)
+                      {
+                        continue;
+                      }else
+                      {
+                        pulseValue = 2000/pow(10,(keyValue+1));
+                        LEDShowInt(pulseValue);
+                        Timer8254SquareWaveModeInit(timer8254Timer0,pow(10,(keyValue+1)));
+                      } 
+                    break;
+                  }
+                }
+              }
+              #elif MICROW_EXAM == 71
+              void main(void)
+              {
+                  //定时器初始化结构体 
+                timeMode_t timeMode ={0};
+                //对结构体进行赋值
+                timeMode.isGat8eCrl = noGateCrl;
+                timeMode.timeWorkMode = timer;
+                //timeMode.timeTriggerMode = innerTrigger;
+                timeMode.timerMode = byteAutoReload;
+                //初始化定时器5ms
+                TimeInit(TIM0 , timeMode ,200, TIMERUS);
+                //使能定时器中断
+                TimerOverFlowItInit(TIM0 , enable);
+                
+                ExternalITInit(exIT1 , EXIT_DOWN_TRIGGER);
+                ExternalITCmd(exIT1, enable);
+                while(1)
+                {
+                  startAdc();
+                  DelayMs(20);
+                  LEDShowFloat(microwBox.example7.vol);
+                  showNum(GetAdcValue());
+                }
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 7   
+
+              }
+              #elif MICROW_EXAM == 8
+              void main(void)
+              { 
+                char timerData[8] = {0};
+                //定时器初始化结构体 
+                timeMode_t timeMode ={0};
+                //对结构体进行赋值
+                timeMode.isGateCrl = noGateCrl;
+                timeMode.timeWorkMode = timer;
+                //timeMode.timeTriggerMode = innerTrigger;
+                timeMode.timerMode = byteAutoReload;
+                //初始化定时器5ms
+                TimeInit(TIM1 , timeMode ,200, TIMERUS);
+                //使能定时器中断
+                TimerOverFlowItInit(TIM1 , enable);
+                while(1)
+                {
+                  DelayMs(20);
+                  ShowTimeString(11,12,13);
+                }
+              }
+              #elif MICROW_EXAM == 9
+ 388          void main(void)
+ 389          {
+ 390   1        uint8_t keyValue = 0;
+ 391   1        uint8_t step = 0;
+ 392   1        int time20MsCnt = 0;
+ 393   1        int time1SCnt = 10;
+ 394   1        //定时器初始化结构体 
+ 395   1        timeMode_t timeMode ={0};
+ 396   1        //对结构体进行赋值
+ 397   1        timeMode.isGateCrl = noGateCrl;
+ 398   1        timeMode.timeWorkMode = timer;
+ 399   1        //timeMode.timeTriggerMode = innerTrigger;
+ 400   1        timeMode.timerMode = byteAutoReload;
+ 401   1        //初始化定时器5ms
+ 402   1        TimeInit(TIM1 , timeMode ,200, TIMERUS);
+ 403   1        //使能定时器中断
+ 404   1        TimerOverFlowItInit(TIM1 , enable);
+ 405   1        
+ 406   1        while(1)
+ 407   1        {
+ 408   2          // 20ms循环一次
+ 409   2          if(microwBox.pro_runFlag)
+ 410   2          {
+ 411   3            microwBox.pro_runFlag = 0;
+ 412   3            time20MsCnt ++;
+ 413   3            if(time20MsCnt == 50 && time1SCnt != 0)
+ 414   3            {
+ 415   4              time20MsCnt = 0;
+ 416   4              time1SCnt = time1SCnt - 1;
+ 417   4            }
+ 418   3            // 显示倒计时
+ 419   3            LEDShowSec(time1SCnt);
+ 420   3            if(time1SCnt == 0)
+ 421   3            {
+ 422   4              // 如果计时时间到，所有的灯都熄灭
+ 423   4              LedAllOff();
+ 424   4              step = 4;
+ 425   4            }
+ 426   3            // 读取按键值
+C51 COMPILER V9.00   MAIN                                                                  12/28/2018 20:10:36 PAGE 8   
+
+ 427   3            keyValue = ReadKeyNum();
+ 428   3            // 找对应的按键值
+ 429   3            if(keyValue == 0xff)
+ 430   3            {
+ 431   4              step = step;
+ 432   4            }else if(keyValue == 12)
+ 433   3            {
+ 434   4              step = 0;
+ 435   4            }else if(keyValue == 13)
+ 436   3            {
+ 437   4              step = 2;
+ 438   4            }else
+ 439   3            {
+ 440   4              step = step;
+ 441   4            }
+ 442   3            
+ 443   3            switch(step)
+ 444   3            {
+ 445   4              case 0:
+ 446   4                time20MsCnt = 0;
+ 447   4                time1SCnt = 10;
+ 448   4                step = 1;
+ 449   4              break;
+ 450   4              case 1:
+ 451   4                // 从左到右一次点亮
+ 452   4                Flow_P374(50);
+ 453   4              break;
+ 454   4              case 2:
+ 455   4                time20MsCnt = 0;
+ 456   4                time1SCnt = 10;
+ 457   4                step = 3;
+ 458   4              break;
+ 459   4              case 3:
+ 460   4                // 从右到左依次点亮
+ 461   4                Flow_P374Contrary(50);
+ 462   4              break;
+ 463   4              default:
+ 464   4              break;
+ 465   4            }
+ 466   3          }   
+ 467   2        }
+ 468   1      }
+ 469          #endif
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    323    ----
+   CONSTANT SIZE    =      3    ----
+   XDATA SIZE       =     15       9
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

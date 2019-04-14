@@ -1,0 +1,445 @@
+C51 COMPILER V9.00   HD7279                                                                12/28/2018 20:10:37 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE HD7279
+OBJECT MODULE PLACED IN .\Objects\HD7279.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\HD7279.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) DEB
+                    -UG OBJECTEXTEND PRINT(.\Listings\HD7279.lst) TABS(2) OBJECT(.\Objects\HD7279.obj)
+
+line level    source
+
+   1          /****************************HD7279.c***********************/
+   2          #include "HD7279.h"
+   3          #include "delay.h"
+   4          #include "stdio.h"
+   5          
+   6          //HD7279显示内容对应数码
+   7          unsigned char xdata realCode[] = \
+   8            {0x7e , 0x30 , 0x6d , 0x79 , 0x33 , 0x5b , 0x5f , 0x70 , 0x7f , 0x7b , 0x01 , 0x80 , 0x00 , 0x6f , 0x48};
+             -//15
+   9          //  0   1   2   3   4   5 6   7   8 9   -   .   blank error
+  10          
+  11          /**
+  12            * @brief  HD7279发送一个字节
+  13            * @note
+  14            * @param  sendData：要发送的数据
+  15            *     @arg
+  16            * @param
+  17            * @retval none
+  18            */
+  19          void HD7279SendByte(unsigned char sendData)
+  20          {
+  21   1      #define SEND_DATA_LENGTH (8)
+  22   1        unsigned char xdata sendCounter = 0;
+  23   1        //片选端拉低
+  24   1        cs=0;
+  25   1        //Delay10Us(12);
+  26   1        Delay10Us_4M(12);
+  27   1        //生成时钟信号并将八位数字依次发送
+  28   1        for(sendCounter = 0 ; sendCounter < SEND_DATA_LENGTH ; sendCounter++)
+  29   1        {
+  30   2          if(sendData & 0x80)
+  31   2          {
+  32   3            dat = 1;
+  33   3          }
+  34   2          else
+  35   2          {
+  36   3            dat = 0;
+  37   3          }
+  38   2          //产生一个上升沿
+  39   2          clk = 1;
+  40   2          //Delay10Us(2);
+  41   2          Delay10Us_4M(2);
+  42   2          //产生一个下降沿
+  43   2          clk = 0;
+  44   2          //Delay10Us(2);
+  45   2          Delay10Us_4M(2);
+  46   2          sendData<<=1;
+  47   2        }
+  48   1        dat = 0;
+  49   1      }
+  50          
+  51          /**
+  52            * @brief  HD7279接收数据
+  53            * @note
+C51 COMPILER V9.00   HD7279                                                                12/28/2018 20:10:37 PAGE 2   
+
+  54            * @param none
+  55            *     @arg
+  56            * @param none
+  57            * @retval ：接受到的一个字节数据
+  58            */
+  59          unsigned char HD7279ReceiveByte(void)
+  60          {
+  61   1      #define RECEIVE_DATA_LENGTH (8)
+  62   1        unsigned char xdata receiveCounter  = 0;
+  63   1        unsigned char xdata receiveData = 0;
+  64   1        //数据端拉高准备接收数据
+  65   1        dat = 1;
+  66   1        //Delay10Us(12);
+  67   1        Delay10Us_4M(12);
+  68   1        //生成时钟信号并将八位数字一次接收
+  69   1        for(receiveCounter = 0 ; receiveCounter < RECEIVE_DATA_LENGTH ; receiveCounter++)
+  70   1        {
+  71   2          //产生一个上升沿
+  72   2          clk = 1;
+  73   2          //Delay10Us(2);
+  74   2          Delay10Us_4M(2);
+  75   2          receiveData*=2;
+  76   2          if(dat)
+  77   2          {
+  78   3            receiveData|=0x01;
+  79   3          }
+  80   2          else
+  81   2          {
+  82   3          
+  83   3          }
+  84   2          clk = 0;
+  85   2          //Delay10Us(2);
+  86   2          Delay10Us_4M(2);
+  87   2        }
+  88   1        dat = 0;
+  89   1        return receiveData;
+  90   1      }
+  91          
+  92          //通过HD7279让数码管显示对应内容
+  93          /**
+  94            * @brief  数码管显示函数
+  95            * @note
+  96            * @param cmd：命令字
+  97            *     @arg
+  98          * @param dataSend:数据字
+  99            * @retval
+ 100            */
+ 101          void LedWrite(unsigned char cmd , unsigned char dataSend)
+ 102          {
+ 103   1        HD7279SendByte(cmd);
+ 104   1        
+ 105   1        HD7279SendByte(dataSend); 
+ 106   1      }
+ 107          
+ 108          /**
+ 109            * @brief  读取按键状态
+ 110            * @note
+ 111            * @param
+ 112            *     @arg
+ 113            * @param
+ 114            * @retval ：返回的按键状态
+ 115            */
+C51 COMPILER V9.00   HD7279                                                                12/28/2018 20:10:37 PAGE 3   
+
+ 116          unsigned char KeyRead(void)
+ 117          {
+ 118   1        HD7279SendByte(CMD_READ);
+ 119   1        
+ 120   1        return (HD7279ReceiveByte());
+ 121   1      }
+ 122          
+ 123          /**
+ 124            * @brief  数码管显示整数
+ 125            * @note
+ 126            * @param  showData：要显示的整形数
+ 127            *     @arg
+ 128            * @param
+ 129            * @retval
+ 130            */
+ 131          void LEDShowInt(long int showData)
+ 132          {
+ 133   1        //要发送的八个数据
+ 134   1        unsigned char xdata LedData[8] = {0x00};
+ 135   1        //循环计数变量
+ 136   1        unsigned char xdata i = 0;
+ 137   1        //存放字符串用临时数组
+ 138   1        signed char xdata tempBuff[8] = {0};
+ 139   1        //数据长度记录变量
+ 140   1        unsigned char xdata dataLength = 0;
+ 141   1        
+ 142   1        //检验输入数据是否在显示范围内
+ 143   1        if(showData<=99999999&&showData>=-9999999)
+ 144   1        {
+ 145   2        
+ 146   2          //将输入的整数转换为字符串
+ 147   2          sprintf((char *)tempBuff,"%Ld",(long int)showData);
+ 148   2          
+ 149   2          //记录数字长度
+ 150   2          for(i = 0; i< 8; i++)
+ 151   2          {
+ 152   3            // 经过sprintf后没有写的位置为NULL,ascill值为0
+ 153   3            if(tempBuff[i]!=0x00)
+ 154   3            {
+ 155   4              dataLength++;
+ 156   4            }
+ 157   3          }
+ 158   2          
+ 159   2          //将字符串转换为对应编码
+ 160   2          for(i = dataLength;i > 0;i--)
+ 161   2          {
+ 162   3            if(tempBuff[i-1]!='-')
+ 163   3            {
+ 164   4              LedData[7 - (dataLength - i)]=tempBuff[i-1] - 0x30;
+ 165   4              LedData[7 - (dataLength - i)] = realCode[LedData[7 - (dataLength - i)]];
+ 166   4            }
+ 167   3            else
+ 168   3            {
+ 169   4              // 针对负数
+ 170   4              LedData[7 - (dataLength - i)] = realCode[10];     
+ 171   4            }
+ 172   3          }
+ 173   2          
+ 174   2          //显示对应编码
+ 175   2          for(i = 0;i<8;i++)
+ 176   2          {
+ 177   3            LedWrite(0x97 - i , LedData[i]);
+C51 COMPILER V9.00   HD7279                                                                12/28/2018 20:10:37 PAGE 4   
+
+ 178   3          }
+ 179   2        }
+ 180   1        else
+ 181   1        {
+ 182   2          //超出范围时全部显示e
+ 183   2          for(i = 0;i<8;i++)
+ 184   2          {
+ 185   3            LedWrite(0x97 - i , 0x6f);
+ 186   3          }
+ 187   2        }
+ 188   1      }
+ 189          /**
+ 190            * @brief  显示浮点数
+ 191            * @note
+ 192          * @param showData:要显示的浮点数
+ 193            *     @arg
+ 194            * @param
+ 195            * @retval
+ 196            */
+ 197          void LEDShowFloat(float showData)
+ 198          {
+ 199   1        //要发送的8个数据
+ 200   1        unsigned char xdata LedData[8] = {0x00};
+ 201   1        //循环技术变量
+ 202   1        unsigned char xdata i = 0;
+ 203   1        //储存字符串用临时变量
+ 204   1        signed char xdata tempBuff[8] = {0};
+ 205   1        //数据长度记录变量
+ 206   1        unsigned char xdata dataLength = 0;
+ 207   1        
+ 208   1        //检验是否在显示范围内
+ 209   1        if(showData<=9999.99&&showData>=-999.99)
+ 210   1        {
+ 211   2        
+ 212   2          //将输入的整数转换为字符串(保留两位小数)
+ 213   2          //sprintf((char *)tempBuff,"%.2f",(float)showData);
+ 214   2          
+ 215   2          //记录数字长度
+ 216   2          for(i = 0; i< 8; i++)
+ 217   2          {
+ 218   3            if(tempBuff[i]!=0x00)
+ 219   3            {
+ 220   4              dataLength++;
+ 221   4            }
+ 222   3          }
+ 223   2          
+ 224   2          //将字符串转换为对应编码
+ 225   2          for(i = dataLength;i > 0;i--)
+ 226   2          {
+ 227   3            if(tempBuff[i-1]!='-'&&tempBuff[i-1]!='.')
+ 228   3            {
+ 229   4              LedData[7 - (dataLength - i)]=tempBuff[i-1] - 0x30;
+ 230   4              LedData[7 - (dataLength - i)] = realCode[LedData[7 - (dataLength - i)]];
+ 231   4            }
+ 232   3            else if(tempBuff[i-1]=='.')
+ 233   3            {
+ 234   4              LedData[7 - (dataLength - i)]=0x80;
+ 235   4            }
+ 236   3            else if(tempBuff[i-1]=='-')
+ 237   3            {
+ 238   4              LedData[7 - (dataLength - i)] = realCode[10];     
+ 239   4            }
+C51 COMPILER V9.00   HD7279                                                                12/28/2018 20:10:37 PAGE 5   
+
+ 240   3          }
+ 241   2          
+ 242   2          //显示对应编码
+ 243   2          for(i = 0;i<8;i++)
+ 244   2          {
+ 245   3            LedWrite(0x97 - i, LedData[i]);       
+ 246   3          }
+ 247   2        }
+ 248   1        else
+ 249   1        {
+ 250   2          //超出范围时全部显示e
+ 251   2          for(i = 0;i<8;i++)
+ 252   2          {
+ 253   3            LedWrite(0x97 - i , 0x6f);
+ 254   3          }
+ 255   2        }
+ 256   1      }
+ 257          /**
+ 258          * @brief  显示字符串
+ 259            * @note
+ 260          * @param tempBuff:要显示的字符串
+ 261            *     @arg
+ 262            * @param
+ 263            * @retval
+ 264            */
+ 265          void LEDShowString(char* tempBuff)
+ 266          {
+ 267   1        //要发送的8个数据
+ 268   1        unsigned char xdata LedData[8] = {0x00};
+ 269   1        //循环技术变量
+ 270   1        unsigned char xdata i = 0;
+ 271   1        //储存字符串用临时变量
+ 272   1        //signed char xdata tempBuff[8] = {0};
+ 273   1        //数据长度记录变量
+ 274   1        unsigned char xdata dataLength = 0;
+ 275   1        
+ 276   1        //检验是否在显示范围内
+ 277   1        if(tempBuff != NULL)
+ 278   1        {
+ 279   2      
+ 280   2          //记录数字长度
+ 281   2          for(i = 0; i< 8; i++)
+ 282   2          {
+ 283   3            if(tempBuff[i]!=0x00)
+ 284   3            {
+ 285   4              dataLength++;
+ 286   4            }
+ 287   3          }
+ 288   2          
+ 289   2          //将字符串转换为对应编码
+ 290   2          for(i = dataLength;i > 0;i--)
+ 291   2          {
+ 292   3            if(tempBuff[i-1]!='-'&&tempBuff[i-1]!='.'&&tempBuff[i-1]!='=')
+ 293   3            {
+ 294   4              LedData[7 - (dataLength - i)]=tempBuff[i-1] - 0x30;
+ 295   4              LedData[7 - (dataLength - i)] = realCode[LedData[7 - (dataLength - i)]];
+ 296   4            }
+ 297   3            else if(tempBuff[i-1]=='.')
+ 298   3            {
+ 299   4              LedData[7 - (dataLength - i)]=0x80;
+ 300   4            }
+ 301   3            else if(tempBuff[i-1]=='-')
+C51 COMPILER V9.00   HD7279                                                                12/28/2018 20:10:37 PAGE 6   
+
+ 302   3            {
+ 303   4              LedData[7 - (dataLength - i)] = realCode[10];     
+ 304   4            }else if(tempBuff[i-1]=='=')
+ 305   3            {
+ 306   4              LedData[7 - (dataLength - i)] = realCode[14]; 
+ 307   4            }
+ 308   3          }
+ 309   2          
+ 310   2          //显示对应编码
+ 311   2          for(i = 0;i<8;i++)
+ 312   2          {
+ 313   3            LedWrite(0x97 - i, LedData[i]);       
+ 314   3          }
+ 315   2        }
+ 316   1        else
+ 317   1        {
+ 318   2          //超出范围时全部显示e
+ 319   2          for(i = 0;i<8;i++)
+ 320   2          {
+ 321   3            LedWrite(0x97 - i , 0x6f);
+ 322   3          }
+ 323   2        }
+ 324   1      }
+ 325          /**
+ 326            * @brief  数码管显示整数秒数(带S)
+ 327            * @note
+ 328            * @param  showData：要显示的整形数
+ 329            *     @arg
+ 330            * @param
+ 331            * @retval
+ 332            */
+ 333          void LEDShowSec(long int showData)
+ 334          {
+ 335   1        //要发送的八个数据
+ 336   1        unsigned char xdata LedData[8] = {0x00};
+ 337   1        //循环计数变量
+ 338   1        unsigned char xdata i = 0;
+ 339   1        //存放字符串用临时数组
+ 340   1        signed char xdata tempBuff[8] = {0};
+ 341   1        //数据长度记录变量
+ 342   1        unsigned char xdata dataLength = 0;
+ 343   1        
+ 344   1        //检验输入数据是否在显示范围内
+ 345   1        if(showData<=99999999&&showData>=-9999999)
+ 346   1        {
+ 347   2        
+ 348   2          //将输入的整数转换为字符串
+ 349   2          sprintf((char *)tempBuff,"%Ld",(long int)showData);
+ 350   2          
+ 351   2          //记录数字长度
+ 352   2          for(i = 0; i< 8; i++)
+ 353   2          {
+ 354   3            // 经过sprintf后没有写的位置为NULL,ascill值为0
+ 355   3            if(tempBuff[i]!=0x00)
+ 356   3            {
+ 357   4              dataLength++;
+ 358   4            }
+ 359   3          }
+ 360   2          
+ 361   2          //将字符串转换为对应编码
+ 362   2          for(i = dataLength;i > 0;i--)
+ 363   2          {
+C51 COMPILER V9.00   HD7279                                                                12/28/2018 20:10:37 PAGE 7   
+
+ 364   3            if(tempBuff[i-1]!='-')
+ 365   3            {
+ 366   4              LedData[7 - (dataLength - i)]=tempBuff[i-1] - 0x30;
+ 367   4              LedData[7 - (dataLength - i)] = realCode[LedData[7 - (dataLength - i)]];
+ 368   4            }
+ 369   3            else
+ 370   3            {
+ 371   4              // 针对负数
+ 372   4              LedData[7 - (dataLength - i)] = realCode[10];     
+ 373   4            }
+ 374   3          }
+ 375   2          
+ 376   2          //显示对应编码
+ 377   2          for(i = 0;i<7;i++)
+ 378   2          {
+ 379   3            LedWrite(0x97 - i , LedData[i+1]);
+ 380   3          }
+ 381   2          LedWrite(0x90,0x5B);
+ 382   2        }
+ 383   1        else
+ 384   1        {
+ 385   2          //超出范围时全部显示e
+ 386   2          for(i = 0;i<8;i++)
+ 387   2          {
+ 388   3            LedWrite(0x97 - i , 0x6f);
+ 389   3          }
+ 390   2        }
+ 391   1      }
+ 392          /**
+ 393          * @brief  自己定义的字符
+ 394            * @note
+ 395          * @param tempBuff:要显示的字符串
+ 396            *     @arg
+ 397            * @param
+ 398            * @retval
+ 399            */
+ 400          void ShowYourNeed(void)
+ 401          {
+ 402   1        unsigned char xdata i = 0;
+ 403   1        unsigned char decoder[]={0};
+ 404   1        for(i = 0;i<8;i++)
+ 405   1        {
+ 406   2          LedWrite(0x97 - i , decoder[i]);
+ 407   2        }
+ 408   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2046    ----
+   CONSTANT SIZE    =     61    ----
+   XDATA SIZE       =     15      86
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

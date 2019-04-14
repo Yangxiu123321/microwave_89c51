@@ -1,0 +1,250 @@
+C51 COMPILER V9.00   TIMER                                                                 12/28/2018 20:10:37 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE TIMER
+OBJECT MODULE PLACED IN .\Objects\timer.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\timer.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) DEBU
+                    -G OBJECTEXTEND PRINT(.\Listings\timer.lst) TABS(2) OBJECT(.\Objects\timer.obj)
+
+line level    source
+
+   1          /*************************timer.c******************************/
+   2          
+   3          #include "timer.h"
+   4          #include "main.h"
+   5          
+   6          extern microwBox_t microwBox;
+   7          
+   8          //定时器使能和失能函数，输入变量为定时器编号和使能失能命令
+   9          void TimerCmd(TimerTypeDef_t TIMx , FunctionalState_t newState)
+  10          {
+  11   1        //根据输入的定时器和命令对TCON寄存器进行配置
+  12   1        if(newState == enable)
+  13   1        {
+  14   2          TCON|=(0x10<<(TIMx * 2));
+  15   2        }
+  16   1        else 
+  17   1        {
+  18   2          TCON&=(~(0x10<<(TIMx * 2)));
+  19   2        }
+  20   1        
+  21   1      }
+  22          
+  23          //读取定时器溢出中断标志位，输入变量为定时器编号
+  24          unsigned char TimerGetOverFlowITFlag(TimerTypeDef_t TIMx)
+  25          {
+  26   1        unsigned char xdata tempItFlag = 0;
+  27   1        //根据输入的定时器读取对应的寄存器
+  28   1        if(TIMx==TIM0)
+  29   1        {
+  30   2          tempItFlag = TF0;
+  31   2        }
+  32   1        else if(TIMx==TIM1)
+  33   1        {
+  34   2          tempItFlag = TF1;
+  35   2        }
+  36   1        return tempItFlag;
+  37   1      }
+  38          
+  39          //清除定时器溢出中断标志位，输入变量为定时器编号
+  40          void TimerClearOverFlowFlag(TimerTypeDef_t TIMx)
+  41          {
+  42   1        //根据输入的定时器编号清除对应寄存器
+  43   1        if(TIMx==TIM0)
+  44   1        {
+  45   2          TF0 = 0;
+  46   2        }
+  47   1        else if(TIMx==TIM1)
+  48   1        {
+  49   2          TF1 = 0;
+  50   2        }
+  51   1      }
+  52          
+  53          //对定时器模式进行初始化
+  54          void TimeModeInit(TimerTypeDef_t TIMx , timeMode_t timeMode)
+C51 COMPILER V9.00   TIMER                                                                 12/28/2018 20:10:37 PAGE 2   
+
+  55          {
+  56   1        unsigned char xdata tempCrl = 0;
+  57   1        
+  58   1        //根据输入的模式配置TMOD寄存器
+  59   1        
+  60   1        tempCrl|=(timeMode.timerMode<<(TIMx * 4));
+  61   1        
+  62   1        tempCrl|=((timeMode.timeWorkMode<<2)<<(TIMx * 4));
+  63   1        
+  64   1        tempCrl|=((timeMode.isGateCrl<<3)<<(TIMx * 4));
+  65   1        
+  66   1        TMOD=tempCrl|(TMOD&(0xf0>>(TIMx * 4)));
+  67   1      }
+  68          
+  69          //对定时器重装载值进行初始化
+  70          void TimeReloadNumInit(TimerTypeDef_t TIMx,timerMode_t timerMode,unsigned long timerPeriod, unsigned int m
+             -echinePeriod)
+  71          {
+  72   1        unsigned int xdata bitNum = 0;
+  73   1        unsigned int xdata reloadNum = 0;
+  74   1        
+  75   1        //根据不同的模式选择最大重装载值 
+  76   1        if(timerMode<=1)
+  77   1        {
+  78   2          bitNum = 65535;
+  79   2        }
+  80   1        else
+  81   1        {
+  82   2          bitNum = 255;
+  83   2        }
+  84   1        
+  85   1        //根据实际配置的周期以及机器周期计算实际的重装载值
+  86   1        reloadNum = bitNum - timerPeriod/mechinePeriod;
+  87   1      
+  88   1        
+  89   1        //根据所选择的定时器配置相应的寄存器
+  90   1        if(TIMx == TIM0)
+  91   1        {
+  92   2          if(timerMode == byteAutoReload)
+  93   2          {
+  94   3            TL0 = reloadNum&0x00ff;
+  95   3            TH0 = reloadNum&0x00ff;
+  96   3          }else
+  97   2          {
+  98   3            TL0 = reloadNum&0x00ff;
+  99   3            TH0 = reloadNum>>8;
+ 100   3          }
+ 101   2        }
+ 102   1        else if(TIMx == TIM1)
+ 103   1        {
+ 104   2          if(timerMode == byteAutoReload)
+ 105   2          {
+ 106   3            TL1 = reloadNum&0x00ff;
+ 107   3            TH1 = reloadNum&0x00ff;
+ 108   3          }else
+ 109   2          {
+ 110   3            TL1 = reloadNum&0x00ff;
+ 111   3            TH1 = reloadNum>>8;
+ 112   3          }
+ 113   2        }
+ 114   1      }
+ 115          
+C51 COMPILER V9.00   TIMER                                                                 12/28/2018 20:10:37 PAGE 3   
+
+ 116          //定时器初始化函数
+ 117          void TimeInit(TimerTypeDef_t TIMx , timeMode_t timeMode ,unsigned long timerPeriod, unsigned int mechinePe
+             -riod)
+ 118          {
+ 119   1        
+ 120   1        //配置定时器工作模式
+ 121   1        TimeModeInit(TIMx , timeMode);
+ 122   1        
+ 123   1        //配置定时器重装载值
+ 124   1        TimeReloadNumInit(TIMx,timeMode.timerMode,timerPeriod,mechinePeriod);
+ 125   1        if(timeMode.timeWorkMode==counter)
+ 126   1        {
+ 127   2          if(TIMx == TIM0)
+ 128   2          {
+ 129   3            TL0 = 0;
+ 130   3            TH0 = 0;
+ 131   3          }
+ 132   2          else if(TIMx == TIM1)
+ 133   2          {
+ 134   3            TL1 = 0;
+ 135   3            TH1 = 0;
+ 136   3          }   
+ 137   2        }
+ 138   1        
+ 139   1        //使能定时器
+ 140   1        TimerCmd(TIMx , enable);
+ 141   1      }
+ 142          
+ 143          
+ 144          //定时器溢出中断使能函数
+ 145          void TimerOverFlowItInit(TimerTypeDef_t TIMx , FunctionalState_t newState)
+ 146          {
+ 147   1        //根据输入的定时器编号配置对应IE中断寄存器
+ 148   1        if(newState == enable)
+ 149   1        {
+ 150   2          EA = 1;
+ 151   2        }
+ 152   1        if(TIMx)
+ 153   1        {
+ 154   2          ET1 = 1;
+ 155   2        }else
+ 156   1        {
+ 157   2          ET0 = 1;
+ 158   2        }
+ 159   1      }
+ 160          
+ 161          
+ 162          // 程序周期控制
+ 163          void setRunTime(void)
+ 164          {
+ 165   1        if(microwBox.example3.timerCnt >= 100)
+ 166   1        {
+ 167   2          microwBox.pro_runFlag = 1;
+ 168   2          microwBox.example3.timerCnt = 0;
+ 169   2        }
+ 170   1      }
+ 171          
+ 172          //将传入的时间转换为字符数组后显示
+ 173          void ShowTimeString(int hour,int min,int sec)
+ 174          {
+ 175   1        char timeData[8] = {0};
+ 176   1        char tempBuf[8] = {0};
+C51 COMPILER V9.00   TIMER                                                                 12/28/2018 20:10:37 PAGE 4   
+
+ 177   1        // 防止超过
+ 178   1        if((hour + min + timeData) > 180)
+ 179   1        {
+ 180   2          return;
+ 181   2        }
+ 182   1        sprintf((char *)tempBuf,"%d",sec);
+ 183   1        if(hour < 10)
+ 184   1        {
+ 185   2          timeData[6] = '0';
+ 186   2          timeData[7] = tempBuf[0];
+ 187   2        }else
+ 188   1        {
+ 189   2          timeData[6] = tempBuf[0];
+ 190   2          timeData[7] = tempBuf[1];
+ 191   2        }
+ 192   1        timeData[5] = '=';
+ 193   1        
+ 194   1        sprintf((char *)tempBuf,"%d",min);
+ 195   1        if(hour < 10)
+ 196   1        {
+ 197   2          timeData[3] = '0';
+ 198   2          timeData[4] = tempBuf[0];
+ 199   2        }else
+ 200   1        {
+ 201   2          timeData[3] = tempBuf[0];
+ 202   2          timeData[4] = tempBuf[1];
+ 203   2        }
+ 204   1        timeData[2] = '=';
+ 205   1        
+ 206   1      
+ 207   1        sprintf((char *)tempBuf,"%d",hour);
+ 208   1        if(hour < 10)
+ 209   1        {
+ 210   2          timeData[0] = '0';
+ 211   2          timeData[1] = tempBuf[0];
+ 212   2        }else
+ 213   1        {
+ 214   2          timeData[1] = tempBuf[1];
+ 215   2          timeData[0] = tempBuf[0];
+ 216   2        }
+ 217   1        LEDShowString(timeData);
+ 218   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    826    ----
+   CONSTANT SIZE    =     19    ----
+   XDATA SIZE       =   ----      46
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

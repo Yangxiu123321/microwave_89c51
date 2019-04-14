@@ -1,0 +1,350 @@
+C51 COMPILER V9.00   8254                                                                  12/28/2018 20:10:38 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE 8254
+OBJECT MODULE PLACED IN .\Objects\8254.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\8254.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) DEBUG
+                    - OBJECTEXTEND PRINT(.\Listings\8254.lst) TABS(2) OBJECT(.\Objects\8254.obj)
+
+line level    source
+
+   1          /************************8254.c******************************/
+   2          
+   3          #include "8254.h"
+   4          #include "delay.h"
+   5          
+   6          //8254地址定义
+   7          unsigned char xdata timer8254Timer0Base _at_ 0xf900;
+   8          unsigned char xdata timer8254Timer1Base _at_ 0xf901;
+   9          unsigned char xdata timer8254Timer2Base _at_ 0xf902;
+  10          unsigned char xdata timer8254Ctr _at_ 0xf903;
+  11          
+  12          //8254使能失能函数
+  13          void Timer8254Cmd(timer8254TypeDef_t timerx, FunctionalState_t newState)
+  14          {
+  15   1        //根据对应的定时器和状态控制门控位输入（由于单片机引脚不足没有使用）
+  16   1        switch(timerx)
+  17   1        {
+  18   2          case timer8254Timer0:
+  19   2            if(newState == enable)
+  20   2            {
+  21   3              
+  22   3            }
+  23   2            else
+  24   2            {
+  25   3              
+  26   3            }
+  27   2          break;
+  28   2          case timer8254Timer1:
+  29   2            if(newState == enable)
+  30   2            {
+  31   3              
+  32   3            }
+  33   2            else
+  34   2            {
+  35   3              
+  36   3            }
+  37   2          break;
+  38   2          case timer8254Timer2:
+  39   2            if(newState == enable)
+  40   2            {
+  41   3              
+  42   3            }
+  43   2            else
+  44   2            {
+  45   3              
+  46   3            }
+  47   2          break;
+  48   2          default:
+  49   2          break;
+  50   2        }
+  51   1      }
+  52          
+  53          //8254模式0初始化
+  54          void Timer8254CounterModeInit(timer8254TypeDef_t timerx, unsigned short setCounter)
+C51 COMPILER V9.00   8254                                                                  12/28/2018 20:10:38 PAGE 2   
+
+  55          {
+  56   1        unsigned char xdata initData = 0;
+  57   1        
+  58   1        
+  59   1        //配置工作模式
+  60   1        initData|=(timerx<<6);
+  61   1        
+  62   1        initData|=(0x03<<4);
+  63   1        
+  64   1        timer8254Ctr = initData;
+  65   1        
+  66   1        //配置装载值
+  67   1        setCounter-=1;
+  68   1        
+  69   1        switch(timerx)
+  70   1        {
+  71   2          case timer8254Timer0:
+  72   2            timer8254Timer0Base = (setCounter&0xff);
+  73   2            timer8254Timer0Base = ((setCounter>>8)&0xff);
+  74   2          break;
+  75   2          case timer8254Timer1:
+  76   2            timer8254Timer1Base = (setCounter&0xff);
+  77   2            timer8254Timer1Base = ((setCounter>>8)&0xff);
+  78   2          break;
+  79   2          case timer8254Timer2:
+  80   2            timer8254Timer2Base = (setCounter&0xff);
+  81   2            timer8254Timer2Base = ((setCounter>>8)&0xff);
+  82   2          break;
+  83   2          default:
+  84   2          break;
+  85   2        }
+  86   1        
+  87   1        //使能定时器
+  88   1        Timer8254Cmd(timerx, enable);
+  89   1      }
+  90          
+  91          //8254模式1初始化
+  92          void Timer8254TriggerModeInit(timer8254TypeDef_t timerx, unsigned short setCounter)
+  93          {
+  94   1        unsigned char xdata initData = 0;
+  95   1        
+  96   1        //配置工作模式
+  97   1        initData|=(timerx<<6);
+  98   1        
+  99   1        initData|=(0x03<<4);
+ 100   1        
+ 101   1        initData|=(0x01<<1);
+ 102   1        
+ 103   1        timer8254Ctr = initData;
+ 104   1        
+ 105   1        //配置装载值
+ 106   1        switch(timerx)
+ 107   1        {
+ 108   2          case timer8254Timer0:
+ 109   2            timer8254Timer0Base = (setCounter&0xff);
+ 110   2            timer8254Timer0Base = ((setCounter>>8)&0xff);
+ 111   2          break;
+ 112   2          case timer8254Timer1:
+ 113   2            timer8254Timer1Base = (setCounter&0xff);
+ 114   2            timer8254Timer1Base = ((setCounter>>8)&0xff);
+ 115   2          break;
+ 116   2          case timer8254Timer2:
+C51 COMPILER V9.00   8254                                                                  12/28/2018 20:10:38 PAGE 3   
+
+ 117   2            timer8254Timer2Base = (setCounter&0xff);
+ 118   2            timer8254Timer2Base = ((setCounter>>8)&0xff);
+ 119   2          break;
+ 120   2          default:
+ 121   2          break;
+ 122   2        } 
+ 123   1      }
+ 124          
+ 125          //模式 1开始一次工作函数
+ 126          void Timer8254StartTrigger(timer8254TypeDef_t timerx)
+ 127          {
+ 128   1        Timer8254Cmd(timerx, enable);
+ 129   1        Delay10Us(1);
+ 130   1        Timer8254Cmd(timerx,disable);
+ 131   1      }
+ 132          
+ 133          //8254模式2初始化
+ 134          void Timer8254PrescalerModeInit(timer8254TypeDef_t timerx, unsigned short prescale)
+ 135          {
+ 136   1        unsigned char xdata initData = 0;
+ 137   1        
+ 138   1        //配置工作模式
+ 139   1        initData|=(timerx<<6);
+ 140   1        
+ 141   1        initData|=(0x03<<4);
+ 142   1        
+ 143   1        initData|=(0x02<<1);
+ 144   1        
+ 145   1        timer8254Ctr = initData;
+ 146   1        
+ 147   1        //配置装载值
+ 148   1        switch(timerx)
+ 149   1        {
+ 150   2          case timer8254Timer0:
+ 151   2            timer8254Timer0Base = (prescale&0xff);
+ 152   2            timer8254Timer0Base = ((prescale>>8)&0xff);
+ 153   2          break;
+ 154   2          case timer8254Timer1:
+ 155   2            timer8254Timer1Base = (prescale&0xff);
+ 156   2            timer8254Timer1Base = ((prescale>>8)&0xff);
+ 157   2          break;
+ 158   2          case timer8254Timer2:
+ 159   2            timer8254Timer2Base = (prescale&0xff);
+ 160   2            timer8254Timer2Base = ((prescale>>8)&0xff);
+ 161   2          break;
+ 162   2          default:
+ 163   2          break;
+ 164   2        }
+ 165   1      
+ 166   1        //使能定时器
+ 167   1        Timer8254Cmd(timerx, enable);
+ 168   1        
+ 169   1      }
+ 170          
+ 171          //8254模式3初始化
+ 172          void Timer8254SquareWaveModeInit(timer8254TypeDef_t timerx, unsigned short period)
+ 173          {
+ 174   1        unsigned char xdata initData = 0;
+ 175   1        
+ 176   1        //配置工作模式
+ 177   1        initData|=(timerx<<6);
+ 178   1        
+C51 COMPILER V9.00   8254                                                                  12/28/2018 20:10:38 PAGE 4   
+
+ 179   1        initData|=(0x03<<4);
+ 180   1        
+ 181   1        initData|=(0x03<<1);
+ 182   1        
+ 183   1        timer8254Ctr = initData;
+ 184   1        
+ 185   1        //配置装载值
+ 186   1        switch(timerx)
+ 187   1        {
+ 188   2          case timer8254Timer0:
+ 189   2            timer8254Timer0Base = (period&0xff);
+ 190   2            timer8254Timer0Base = ((period>>8)&0xff);
+ 191   2          break;
+ 192   2          case timer8254Timer1:
+ 193   2            timer8254Timer1Base = (period&0xff);
+ 194   2            timer8254Timer1Base = ((period>>8)&0xff);
+ 195   2          break;
+ 196   2          case timer8254Timer2:
+ 197   2            timer8254Timer2Base = (period&0xff);
+ 198   2            timer8254Timer2Base = ((period>>8)&0xff);
+ 199   2          break;
+ 200   2          default:
+ 201   2          break;
+ 202   2        }
+ 203   1        
+ 204   1        //定时器使能
+ 205   1        Timer8254Cmd(timerx, enable);
+ 206   1      }
+ 207          
+ 208          //8254模式4初始化
+ 209          void Timer8254SoftwareStrobeModeInit(timer8254TypeDef_t timerx, unsigned short setCounter)
+ 210          {
+ 211   1        unsigned char xdata initData = 0;
+ 212   1        
+ 213   1        //配置工作模式
+ 214   1        initData|=(timerx<<6);
+ 215   1        
+ 216   1        initData|=(0x03<<4);
+ 217   1        
+ 218   1        initData|=(0x04<<1);
+ 219   1        
+ 220   1        timer8254Ctr = initData;
+ 221   1        
+ 222   1        //配置重装载值
+ 223   1        switch(timerx)
+ 224   1        {
+ 225   2          case timer8254Timer0:
+ 226   2            timer8254Timer0Base = (setCounter&0xff);
+ 227   2            timer8254Timer0Base = ((setCounter>>8)&0xff);
+ 228   2          break;
+ 229   2          case timer8254Timer1:
+ 230   2            timer8254Timer1Base = (setCounter&0xff);
+ 231   2            timer8254Timer1Base = ((setCounter>>8)&0xff);
+ 232   2          break;
+ 233   2          case timer8254Timer2:
+ 234   2            timer8254Timer2Base = (setCounter&0xff);
+ 235   2            timer8254Timer2Base = ((setCounter>>8)&0xff);
+ 236   2          break;
+ 237   2          default:
+ 238   2          break;
+ 239   2        }
+ 240   1      
+C51 COMPILER V9.00   8254                                                                  12/28/2018 20:10:38 PAGE 5   
+
+ 241   1        //使能定时器
+ 242   1        Timer8254Cmd(timerx, enable); 
+ 243   1      }
+ 244          
+ 245          //8254模式5初始化
+ 246          void Timer8254HardwareStrobeModeInit(timer8254TypeDef_t timerx, unsigned short setCounter)
+ 247          {
+ 248   1        unsigned char xdata initData = 0;
+ 249   1        
+ 250   1        //配置工作模式
+ 251   1        initData|=(timerx<<6);
+ 252   1        
+ 253   1        initData|=(0x03<<4);
+ 254   1        
+ 255   1        initData|=(0x05<<1);
+ 256   1        
+ 257   1        timer8254Ctr = initData;
+ 258   1        
+ 259   1        //配置装载值
+ 260   1        switch(timerx)
+ 261   1        {
+ 262   2          case timer8254Timer0:
+ 263   2            timer8254Timer0Base = (setCounter&0xff);
+ 264   2            timer8254Timer0Base = ((setCounter>>8)&0xff);
+ 265   2          break;
+ 266   2          case timer8254Timer1:
+ 267   2            timer8254Timer1Base = (setCounter&0xff);
+ 268   2            timer8254Timer1Base = ((setCounter>>8)&0xff);
+ 269   2          break;
+ 270   2          case timer8254Timer2:
+ 271   2            timer8254Timer2Base = (setCounter&0xff);
+ 272   2            timer8254Timer2Base = ((setCounter>>8)&0xff);
+ 273   2          break;
+ 274   2          default:
+ 275   2          break;
+ 276   2        }
+ 277   1      
+ 278   1        //使能定时器
+ 279   1        Timer8254Cmd(timerx,enable);  
+ 280   1      }
+ 281          
+ 282          //8254开始一次硬件触发
+ 283          void Timer8254StartHardStrobe(timer8254TypeDef_t timerx)
+ 284          {
+ 285   1        Timer8254Cmd(timerx, disable);
+ 286   1        Delay10Us(1);
+ 287   1        Timer8254Cmd(timerx,enable);
+ 288   1      }
+ 289          
+ 290          //读取8254计数值
+ 291          unsigned short Timer8254GetCounter(timer8254TypeDef_t timerx)
+ 292          {
+ 293   1        unsigned short xdata returnValue = 0;
+ 294   1        
+ 295   1        timer8254Ctr = timerx<<6;
+ 296   1        
+ 297   1        switch(timerx)
+ 298   1        {
+ 299   2          case timer8254Timer0:
+ 300   2            returnValue = timer8254Timer0Base;
+ 301   2            returnValue|=(timer8254Timer0Base<<8);
+ 302   2          break;
+C51 COMPILER V9.00   8254                                                                  12/28/2018 20:10:38 PAGE 6   
+
+ 303   2          case timer8254Timer1:
+ 304   2            returnValue = timer8254Timer1Base;
+ 305   2            returnValue|=(timer8254Timer1Base<<8);
+ 306   2          break;
+ 307   2          case timer8254Timer2:
+ 308   2            returnValue = timer8254Timer1Base;
+ 309   2            returnValue|=(timer8254Timer1Base<<8);
+ 310   2          break;
+ 311   2          default:
+ 312   2          break;
+ 313   2        }
+ 314   1      
+ 315   1        return returnValue;
+ 316   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    424    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,136 @@
+C51 COMPILER V9.00   STEPMOTOR                                                             12/28/2018 20:10:36 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE STEPMOTOR
+OBJECT MODULE PLACED IN .\Objects\stepMotor.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\stepMotor.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) 
+                    -DEBUG OBJECTEXTEND PRINT(.\Listings\stepMotor.lst) TABS(2) OBJECT(.\Objects\stepMotor.obj)
+
+line level    source
+
+   1          #include "stepMotor.h"
+   2          #include "delay.h"
+   3          #include <math.h>
+   4          
+   5          void StepMotorPinInit(void)
+   6          {
+   7   1        GPIOInit(PHASE_A_PORT, PHASE_A_PIN, GPIO_PUSHPULL);
+   8   1        GPIOInit(PHASE_B_PORT, PHASE_B_PIN, GPIO_PUSHPULL);
+   9   1        GPIOInit(PHASE_C_PORT, PHASE_C_PIN, GPIO_PUSHPULL);
+  10   1        GPIOInit(PHASE_D_PORT, PHASE_D_PIN, GPIO_PUSHPULL); 
+  11   1      }
+  12          
+  13          void StepMotorSpeedControl(float vel)
+  14          {
+  15   1        static unsigned char xdata state = 0x00;
+  16   1        static unsigned long xdata counter = 0;
+  17   1        
+  18   1        switch(state)
+  19   1        {
+  20   2          case 0:
+  21   2            GPIOSetBit(PHASE_A_PORT, PHASE_A_PIN);
+  22   2            GPIOResetBit(PHASE_B_PORT,PHASE_B_PIN);
+  23   2            GPIOResetBit(PHASE_C_PORT,PHASE_C_PIN);
+  24   2            GPIOResetBit(PHASE_D_PORT,PHASE_D_PIN);     
+  25   2          break;
+  26   2          case 1:
+  27   2            GPIOSetBit(PHASE_A_PORT, PHASE_A_PIN);
+  28   2            GPIOSetBit(PHASE_B_PORT,PHASE_B_PIN);
+  29   2            GPIOResetBit(PHASE_C_PORT,PHASE_C_PIN);
+  30   2            GPIOResetBit(PHASE_D_PORT,PHASE_D_PIN);     
+  31   2          break;
+  32   2          case 2:
+  33   2            GPIOResetBit(PHASE_A_PORT, PHASE_A_PIN);
+  34   2            GPIOSetBit(PHASE_B_PORT,PHASE_B_PIN);
+  35   2            GPIOResetBit(PHASE_C_PORT,PHASE_C_PIN);
+  36   2            GPIOResetBit(PHASE_D_PORT,PHASE_D_PIN);     
+  37   2          break;
+  38   2          case 3:
+  39   2            GPIOResetBit(PHASE_A_PORT, PHASE_A_PIN);
+  40   2            GPIOSetBit(PHASE_B_PORT,PHASE_B_PIN);
+  41   2            GPIOSetBit(PHASE_C_PORT,PHASE_C_PIN);
+  42   2            GPIOResetBit(PHASE_D_PORT,PHASE_D_PIN);     
+  43   2          break;
+  44   2          case 4:
+  45   2            GPIOResetBit(PHASE_A_PORT, PHASE_A_PIN);
+  46   2            GPIOResetBit(PHASE_B_PORT,PHASE_B_PIN);
+  47   2            GPIOSetBit(PHASE_C_PORT,PHASE_C_PIN);
+  48   2            GPIOResetBit(PHASE_D_PORT,PHASE_D_PIN);     
+  49   2          break;
+  50   2          case 5:
+  51   2            GPIOResetBit(PHASE_A_PORT, PHASE_A_PIN);
+  52   2            GPIOResetBit(PHASE_B_PORT,PHASE_B_PIN);
+  53   2            GPIOSetBit(PHASE_C_PORT,PHASE_C_PIN);
+  54   2            GPIOSetBit(PHASE_D_PORT,PHASE_D_PIN);
+C51 COMPILER V9.00   STEPMOTOR                                                             12/28/2018 20:10:36 PAGE 2   
+
+  55   2          break;
+  56   2          case 6:
+  57   2            GPIOResetBit(PHASE_A_PORT, PHASE_A_PIN);
+  58   2            GPIOResetBit(PHASE_B_PORT,PHASE_B_PIN);
+  59   2            GPIOResetBit(PHASE_C_PORT,PHASE_C_PIN);
+  60   2            GPIOSetBit(PHASE_D_PORT,PHASE_D_PIN);
+  61   2          break;
+  62   2          case 7:
+  63   2            GPIOSetBit(PHASE_A_PORT, PHASE_A_PIN);
+  64   2            GPIOResetBit(PHASE_B_PORT,PHASE_B_PIN);
+  65   2            GPIOResetBit(PHASE_C_PORT,PHASE_C_PIN);
+  66   2            GPIOSetBit(PHASE_D_PORT,PHASE_D_PIN);
+  67   2          break;
+  68   2          default:
+  69   2          break;
+  70   2        }
+  71   1        
+  72   1        counter++;
+  73   1        
+  74   1        if(counter==((unsigned long)((STEP_RESOLUTION/(fabs(vel)))*1000.0f)))
+  75   1        {
+  76   2          counter=0;
+  77   2          if(vel>0)
+  78   2          {
+  79   3            // 不用延时函数，防止程序在延时函数处阻塞
+  80   3            //DelayMs((int)((STEP_RESOLUTION/vel)*1000));
+  81   3            state++;
+  82   3            state%=8;
+  83   3          }
+  84   2          else if(vel<0)
+  85   2          {
+  86   3            //DelayMs((int)((STEP_RESOLUTION/(-vel))*1000));
+  87   3            if(state<1)
+  88   3            {
+  89   4              state=8;
+  90   4            }
+  91   3            state--;  
+  92   3          }
+  93   2        }
+  94   1      }
+  95          
+  96          
+  97          /**
+  98          功能:返回电机的控制命令
+  99          命令:
+ 100          P3^2->控制电机的启动与停止
+ 101          P3^3->控制正反转
+ 102          P3^4 P3^5:控制电机的转速
+ 103          **/
+ 104          uint8_t getStepMotorCtrlCmd(void)
+ 105          {
+ 106   1        return GPIOReadByte(GPIOPort3);
+ 107   1      }
+ 108          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    463    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      5       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+C51 COMPILER V9.00   STEPMOTOR                                                             12/28/2018 20:10:36 PAGE 3   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,139 @@
+C51 COMPILER V9.00   89C51_IT                                                              12/28/2018 20:10:37 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE 89C51_IT
+OBJECT MODULE PLACED IN .\Objects\89C51_it.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\89C51_it.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) D
+                    -EBUG OBJECTEXTEND PRINT(.\Listings\89C51_it.lst) TABS(2) OBJECT(.\Objects\89C51_it.obj)
+
+line level    source
+
+   1          /***********************89C51_it.c***************************/
+   2          
+   3          #include "89C51_it.h"
+   4          #include "timer.h"
+   5          #include "main.h"
+   6          
+   7          unsigned char xdata V1[32]={0x00,0x0f,0x1f,0x2f,0x3f,0x4f,0x5f,0x6f,0x7f,0x8f,0x9f,0xaf,0xbf,0xcf,0xdf,0xe
+             -f,0xff,0xef,0xdf,0xcf,0xbf,0xaf,0x9f,0x8f,0x7f,0x6f,0x5f,0x4f,0x3f,0x2f,0x1f,0x0f};
+   8          
+   9          extern microwBox_t microwBox;
+  10          
+  11          /**
+  12            * @brief  外部中断初始化
+  13            * @note
+  14            * @param  exITx：中断标号
+  15          *           exIT0:中断0
+  16          *       exIT1:中断1
+  17          * @param  triggerMode:触发模式
+  18          *       EXIT_UPDOWN_TRIGGER：电平触发
+  19          *       EXIT_DOWN_TRIGGER：下降沿触发         
+  20            * @retval none
+  21            */
+  22            
+  23          //外部中断使能失能函数
+  24          void ExternalITCmd(exITTypedef_t exITx, FunctionalState_t newState)
+  25          {
+  26   1        //根据输入的中断号和状态对相应寄存器进行置位或复位
+  27   1        if(exITx==exIT0)
+  28   1        {
+  29   2          EX0 = newState;
+  30   2        }
+  31   1        else if(exITx==exIT1)
+  32   1        {
+  33   2          EX1 = newState;
+  34   2        }
+  35   1      }
+  36          
+  37          void ExternalITInit(exITTypedef_t exITx , unsigned char triggerMode)
+  38          {
+  39   1        //根据输入的中断号和触发模式对相应寄存器进行配置
+  40   1        if(exITx==exIT0)
+  41   1        {
+  42   2          IT0 = triggerMode;
+  43   2          ExternalITCmd(exIT0 , enable);
+  44   2        }
+  45   1        else if(exITx==exIT1)
+  46   1        {
+  47   2          IT1  = triggerMode;
+  48   2          ExternalITCmd(exIT1 , enable);    
+  49   2        }
+  50   1      }
+  51          
+  52          //定时器0溢出中断服务函数
+  53          void time0()interrupt 1
+C51 COMPILER V9.00   89C51_IT                                                              12/28/2018 20:10:37 PAGE 2   
+
+  54          {
+  55   1        TimerClearOverFlowFlag(TIM0);
+  56   1        // 设置程序周期
+  57   1        microwBox.example3.timerCnt += 1;
+  58   1        microwBox.example7.dacProCnt += 1;
+  59   1        if(microwBox.example7.dacProCnt > 2)
+  60   1        {
+  61   2          microwBox.example7.dacProCnt = 0;
+  62   2          dacOut(V1[microwBox.example7.dacNum]);
+  63   2          microwBox.example7.dacNum += 1;
+  64   2          if(microwBox.example7.dacNum == 32)
+  65   2          {
+  66   3            microwBox.example7.dacNum = 0;
+  67   3          }
+  68   2        }
+  69   1        
+  70   1        setRunTime(); 
+  71   1      }
+  72          
+  73          void time1()interrupt 3
+  74          {
+  75   1        TimerClearOverFlowFlag(TIM1);
+  76   1        microwBox.example3.timerCnt += 1;
+  77   1        setRunTime(); 
+  78   1      }
+  79          
+  80          //外部中断0服务函数1KHz
+  81          void ExIT0_Handler() interrupt 0
+  82          {
+  83   1        if(microwBox.example3.LedItStatus)
+  84   1        {
+  85   2          microwBox.example3.LedItStatus = 0;
+  86   2        }else{
+  87   2          microwBox.example3.LedItStatus = 1;
+  88   2        }
+  89   1      
+  90   1      }
+  91          
+  92          //外部中断1服务函数
+  93          void ExIT1_Handler() interrupt 2
+  94          {
+  95   1        microwBox.example7.vol = GetVoltage(0,5);
+  96   1      }
+  97          
+  98          void UART1_ITHandler()interrupt 4
+  99          {
+ 100   1        if(UARTGetFlagStatus(UART1,UART_Rx_IT_FLAG)==SET)
+ 101   1        {
+ 102   2          microwBox.uart.enterIntCnt = 0;
+ 103   2          microwBox.uart.UART1Recieve = UARTRecieveByte(UART1);
+ 104   2          UARTClearFlagStatus(UART1, UART_Rx_IT_FLAG);
+ 105   2        }
+ 106   1        else if(UARTGetFlagStatus(UART1,UART_Tx_IT_FLAG)==SET)
+ 107   1        {
+ 108   2      //    UARTClearFlagStatus(UART1, UART_Tx_IT_FLAG);
+ 109   2        }
+ 110   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    481    ----
+   CONSTANT SIZE    =   ----    ----
+C51 COMPILER V9.00   89C51_IT                                                              12/28/2018 20:10:37 PAGE 3   
+
+   XDATA SIZE       =     32    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

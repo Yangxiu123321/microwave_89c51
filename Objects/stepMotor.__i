@@ -1,0 +1,1 @@
+"src\stepMotor.c" LARGE OPTIMIZE (8,SPEED) BROWSE INCDIR(.\src) DEBUG OBJECTEXTEND PRINT(.\Listings\stepMotor.lst) TABS (2) OBJECT(.\Objects\stepMotor.obj)

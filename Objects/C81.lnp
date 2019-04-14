@@ -1,0 +1,16 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\PIO_1.obj",
+".\Objects\gpio.obj",
+".\Objects\stepMotor.obj",
+".\Objects\delay.obj",
+".\Objects\timer.obj",
+".\Objects\89C51_it.obj",
+".\Objects\usart.obj",
+".\Objects\HD7279.obj",
+".\Objects\8255.obj",
+".\Objects\8254.obj",
+".\Objects\key.obj",
+".\Objects\adc.obj" 
+TO ".\Objects\C81" 
+PRINT(".\Listings\C81.m51") RAMSIZE(256) 

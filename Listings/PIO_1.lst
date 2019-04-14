@@ -1,0 +1,255 @@
+C51 COMPILER V9.00   PIO_1                                                                 12/28/2018 20:10:36 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE PIO_1
+OBJECT MODULE PLACED IN .\Objects\PIO_1.obj
+COMPILER INVOKED BY: D:\program files\keil\C51\BIN\C51.EXE src\PIO_1.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\src) DEBU
+                    -G OBJECTEXTEND PRINT(.\Listings\PIO_1.lst) TABS(2) OBJECT(.\Objects\PIO_1.obj)
+
+line level    source
+
+   1          #include "PIO_1.h"
+   2          #include "STC15F2K60S2.h"
+   3          #include "stdDtype.h"
+   4          
+   5          unsigned char xdata PLED_374 _at_ 0xFA00;
+   6          
+   7          //将P1口0~3位的输入输出到P1口4~7位，用开关控制LED亮灭
+   8          void ShowInput(void)
+   9          {
+  10   1        unsigned char xdata p1Input = 0;
+  11   1        
+  12   1        //P1为准双向，在读取前要写入1，避免读取出错
+  13   1        P1 |= P1_INPUT;
+  14   1        
+  15   1        p1Input = P1&P1_INPUT;
+  16   1        
+  17   1        p1Input<<=4;
+  18   1        P1 = p1Input;
+  19   1        
+  20   1      }
+  21          
+  22          //P1口输出控制LED四个一组循环闪烁，输入为闪烁周期，单位毫秒
+  23          void BlinkIn4(unsigned short period)
+  24          {
+  25   1        static unsigned short xdata blinkTimeCounter  = 0;
+  26   1        
+  27   1        blinkTimeCounter+=2;
+  28   1        blinkTimeCounter%=2*period;
+  29   1        
+  30   1        if(blinkTimeCounter/period)
+  31   1        {
+  32   2          P1 = 0x0f;
+  33   2        }
+  34   1        else
+  35   1        {
+  36   2          P1 = 0xf0;
+  37   2        }
+  38   1      }
+  39          
+  40          //P1口输出控制LED流水灯，输入为流水等的周期，单位：毫秒
+  41          void Flow(unsigned short flowPeriod)
+  42          {
+  43   1        static unsigned short xdata flowCounter = 0;
+  44   1        static unsigned char xdata flowState = 0x01;
+  45   1        
+  46   1        flowCounter+=1;
+  47   1        flowCounter%=flowPeriod;
+  48   1        
+  49   1        //电路连接为输出低时LED亮
+  50   1        P1 = ~flowState;
+  51   1        
+  52   1        if(flowCounter == 0)
+  53   1        {
+  54   2          if(flowState!=0x80)
+C51 COMPILER V9.00   PIO_1                                                                 12/28/2018 20:10:36 PAGE 2   
+
+  55   2          {
+  56   3            flowState<<=1;
+  57   3          }
+  58   2          else
+  59   2          {
+  60   3            flowState = 0x01;
+  61   3          }
+  62   2        }
+  63   1      }
+  64          
+  65          // 反方向旋转
+  66          void FlowContrary(unsigned short flowPeriod)
+  67          {
+  68   1        static unsigned short xdata flowCounter = 0;
+  69   1        static unsigned char xdata flowState = 0x01;
+  70   1        
+  71   1        flowCounter+=1;
+  72   1        flowCounter%=flowPeriod;
+  73   1        
+  74   1        //电路连接为输出低时LED亮
+  75   1        P1 = ~flowState;
+  76   1        
+  77   1        if(flowCounter == 0)
+  78   1        {
+  79   2          if(flowState!=0x01)
+  80   2          {
+  81   3            flowState>>=1;
+  82   3          }
+  83   2          else
+  84   2          {
+  85   3            flowState = 0x80;
+  86   3          }
+  87   2        }
+  88   1      }
+  89          
+  90          //每一个灯在一个周期内高电平占空比(50%占空比)亮
+  91          void FlowLedOnly(unsigned short flowPeriod)
+  92          {
+  93   1        static unsigned short xdata flowCounter = 0;
+  94   1        static unsigned char xdata flowState = 0x01;
+  95   1        
+  96   1        flowCounter+=1;
+  97   1        flowCounter%=flowPeriod;
+  98   1          
+  99   1        if(flowCounter == 0)
+ 100   1        {
+ 101   2          if(flowState!=0x01)
+ 102   2          {
+ 103   3            flowState>>=1;
+ 104   3          }
+ 105   2          else
+ 106   2          {
+ 107   3            flowState = 0x80;
+ 108   3          }
+ 109   2        }else if(flowCounter >= (flowPeriod/2))
+ 110   1        {
+ 111   2          // 灯全部熄灭
+ 112   2          P1 = 0xff;
+ 113   2        }else
+ 114   1        {
+ 115   2          //电路连接为输出低时LED亮
+ 116   2          P1 = ~flowState;
+C51 COMPILER V9.00   PIO_1                                                                 12/28/2018 20:10:36 PAGE 3   
+
+ 117   2        }
+ 118   1      }
+ 119          
+ 120          //将按键的编号用led等二进制的方式显示出来
+ 121          void Key2LedBinary(void)
+ 122          { 
+ 123   1        if((P1&0x01))
+ 124   1        {
+ 125   2          P1 = 0xff;
+ 126   2        }else if((P1&0x02))
+ 127   1        {
+ 128   2          P1 = 0xef;
+ 129   2        }
+ 130   1        else if((P1&0x04))
+ 131   1        {
+ 132   2          P1 = 0xdf;
+ 133   2        }else if((P1&0x08))
+ 134   1        {
+ 135   2          P1 = 0xcf;
+ 136   2        }else
+ 137   1        {
+ 138   2          P1 = 0xff;
+ 139   2        }
+ 140   1      }
+ 141          
+ 142          void led_flow_p374(void)
+ 143          {
+ 144   1        uint8_t status = 0;
+ 145   1        status = 0x0f;
+ 146   1        PLED_374 = status;
+ 147   1      }
+ 148          
+ 149          //374输出控制LED四个一组循环闪烁，输入为闪烁周期，单位毫秒
+ 150          void BlinkIn4_P374(unsigned short period)
+ 151          {
+ 152   1        static unsigned short xdata blinkTimeCounter  = 0;
+ 153   1        
+ 154   1        blinkTimeCounter+=2;
+ 155   1        blinkTimeCounter%=2*period;
+ 156   1        
+ 157   1        if(blinkTimeCounter/period)
+ 158   1        {
+ 159   2          PLED_374 = 0x0f;
+ 160   2        }
+ 161   1        else
+ 162   1        {
+ 163   2          PLED_374 = 0xf0;
+ 164   2        }
+ 165   1      }
+ 166          
+ 167          //374输出控制LED流水灯，输入为流水等的周期，单位：毫秒
+ 168          void Flow_P374(unsigned short flowPeriod)
+ 169          {
+ 170   1        static unsigned short xdata flowCounter = 0;
+ 171   1        static unsigned char xdata flowState = 0x01;
+ 172   1        
+ 173   1        flowCounter+=1;
+ 174   1        flowCounter%=flowPeriod;
+ 175   1        
+ 176   1        //电路连接为输出低时LED亮
+ 177   1        PLED_374 = ~flowState;
+ 178   1        
+C51 COMPILER V9.00   PIO_1                                                                 12/28/2018 20:10:36 PAGE 4   
+
+ 179   1        if(flowCounter == 0)
+ 180   1        {
+ 181   2          if(flowState!=0x80)
+ 182   2          {
+ 183   3            flowState<<=1;
+ 184   3          }
+ 185   2          else
+ 186   2          {
+ 187   3            flowState = 0x01;
+ 188   3          }
+ 189   2        }
+ 190   1      }
+ 191          
+ 192          //灯逆时针流水灯
+ 193          void Flow_P374Contrary(unsigned short flowPeriod)
+ 194          {
+ 195   1        static unsigned short xdata flowCounter = 0;
+ 196   1        static unsigned char xdata flowState = 0x01;
+ 197   1        
+ 198   1        flowCounter+=1;
+ 199   1        flowCounter%=flowPeriod;
+ 200   1        
+ 201   1        //电路连接为输出低时LED亮
+ 202   1        PLED_374 = ~flowState;
+ 203   1        
+ 204   1        if(flowCounter == 0)
+ 205   1        {
+ 206   2          if(flowState!=0x01)
+ 207   2          {
+ 208   3            flowState>>=1;
+ 209   3          }
+ 210   2          else
+ 211   2          {
+ 212   3            flowState = 0x80;
+ 213   3          }
+ 214   2        }
+ 215   1      }
+ 216          
+ 217          void LedAllOff(void)
+ 218          {
+ 219   1        PLED_374 = 0xff;
+ 220   1      }
+ 221          
+ 222          void showNum(unsigned char dataNum)
+ 223          {
+ 224   1        PLED_374 = dataNum;
+ 225   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    590    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     19       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
